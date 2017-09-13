@@ -19,7 +19,7 @@ public class MediaItem {
     private int type;
     private String url;
     private String fileName;
-    private int duration; //in seconds
+    private int duration; //in milliseconds
     private int transitionType; //0 will be no transition, 1 =fade, then we can get cheesy with fancy wipes, etc.
     private Date timeToPlay;
     private Boolean playImmediate;//used to make the task play the next
@@ -52,6 +52,7 @@ public class MediaItem {
 
             //This will eventually need to check the mod date on the file and compare with the data sent from the server.
         }
+        this.duration= 3*1000; //10 seconds
     }
 
     public int getOrder() {

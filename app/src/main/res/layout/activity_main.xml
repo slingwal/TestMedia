@@ -13,7 +13,7 @@
         app:srcCompat="@android:color/transparent"
         tools:layout_editor_absoluteX="4dp"
         tools:layout_editor_absoluteY="5dp"
-        android:scaleType="fitXY"
+        android:scaleType="fitCenter"
         android:adjustViewBounds="false"/>
 
 </LinearLayout>

@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@android:color/black"
     tools:context="com.example.testmedia.MainActivity">
 
     <ImageView
@@ -13,7 +14,22 @@
         app:srcCompat="@android:color/transparent"
         tools:layout_editor_absoluteX="4dp"
         tools:layout_editor_absoluteY="5dp"
-        android:scaleType="fitCenter"
+        android:scaleType="centerInside"
         android:adjustViewBounds="false"/>
 
-</LinearLayout>
+    <TextView
+        android:id="@+id/tvTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:scaleType="centerInside"
+        android:text="Title"/>
+    <TextView
+        android:id="@+id/tvDetail"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_below="@+id/tvTitle"
+        android:text="Title"/>
+
+</RelativeLayout>

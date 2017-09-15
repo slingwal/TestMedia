@@ -27,30 +27,35 @@ public class MediaItem {
     private Date modDate;
     private DownloadManager downloadManager;
     private long downloadId;
+    private String title;
+    private String details;
 
-    //only media types so far.  We can later define a weather, spiorts or news feed type that would behave as a different media item.
+    //only media types so far.  We can later define a weather, sports or news feed type that would behave as a different media item.
     public final static int MEDIA_TYPE_IMAGE = 0;
     public final static int MEDIA_TYPE_VIDEO = 1;
+    public final static int MEDIA_TYPE_NEWS = 2;
+    public final static int MEDIA_TYPE_WEATHER = 3;
+    public final static int MEDIA_TYPE_SPORTS = 4;
 
     //can define more transitions here if needed
     public final static int MEDIA_TRANSITION_TYPE_NONE = 0;
     public final static int MEDIA_TRANSITION_TYPE_FADE = 1;
 
-    public MediaItem(Context context, String url){
-        this.type=MEDIA_TYPE_IMAGE;
+    public MediaItem(Context context, String url, int Type){
+        this.type=Type;
         this.url = url;
+        if(url.length()>0) {
+            this.fileName = url.substring(url.lastIndexOf('/') + 1, url.length());
+            String a = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) + "/" + fileName;
 
-        this.fileName = url.substring(url.lastIndexOf('/')+1,url.length());
-        String a = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)+"/"+fileName;
+            File file = new File(a);
+            if (!file.exists()) {
+                Uri uri = Uri.parse(url);
+                downloadId = DownloadData(context, uri, fileName);
+            } else {
 
-        File file = new File(a);
-        if (!file.exists()){
-            Uri uri = Uri.parse(url);
-            downloadId = DownloadData(context,uri,fileName);
-        }
-        else {
-
-            //This will eventually need to check the mod date on the file and compare with the data sent from the server.
+                //This will eventually need to check the mod date on the file and compare with the data sent from the server.
+            }
         }
         this.duration= 3*1000; //10 seconds
     }
@@ -137,6 +142,22 @@ public class MediaItem {
 
     public long getDownloadId() {
         return downloadId;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getDetails() {
+        return details;
+    }
+
+    public void setDetails(String details) {
+        this.details = details;
     }
 
     private long DownloadData (Context context, Uri uri, String name) {

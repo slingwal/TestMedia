@@ -32,4 +32,12 @@
         android:layout_below="@+id/tvTitle"
         android:text="Title"/>
 
+    <VideoView
+        android:id="@+id/videoView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:scaleType="fitCenter"
+        android:visibility="gone"/>
+
 </RelativeLayout>

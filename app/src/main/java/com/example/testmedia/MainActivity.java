@@ -24,6 +24,7 @@ import android.widget.TextView;
 import android.widget.VideoView;
 
 import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -241,7 +242,7 @@ public class MainActivity extends AppCompatActivity {
                 client.setDoOutput(true);
 
                 InputStream in = new BufferedInputStream(client.getInputStream());
-                readStream(in); //need my own method here.
+                readStream(in);
 
             } catch (MalformedURLException e) {
                 e.printStackTrace();
@@ -257,6 +258,20 @@ public class MainActivity extends AppCompatActivity {
 
         protected void onPostExecute(Void result) {
 
+        }
+
+        private String readStream(InputStream is) {
+            try {
+                ByteArrayOutputStream bo = new ByteArrayOutputStream();
+                int i = is.read();
+                while(i != -1) {
+                    bo.write(i);
+                    i = is.read();
+                }
+                return bo.toString();
+            } catch (IOException e) {
+                return "";
+            }
         }
     }
 

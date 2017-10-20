@@ -7,6 +7,9 @@ import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.media.MediaPlayer;
+import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
+import android.os.AsyncTask;
 import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -20,10 +23,24 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.VideoView;
 
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.NetworkInterface;
+import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
+    static final String serverName = "192.168.7.158";
+    final String zip = "84118";
+    final String clientId = "test";
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,6 +52,13 @@ public class MainActivity extends AppCompatActivity {
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         setContentView(R.layout.activity_main);
+
+        //these variables will eventually need to be configured preferences.
+
+        String deviceId = getMacAddr();
+        Log.v("MAC ADDRESS",deviceId);
+
+
 
         final ArrayList<MediaItem> mediaList = new ArrayList<MediaItem>();
         final ImageView imageView = (ImageView) findViewById(R.id.imageView);
@@ -174,4 +198,66 @@ public class MainActivity extends AppCompatActivity {
         }.run();
 
     }
+
+    public static String getMacAddr() {
+        try {
+            List<NetworkInterface> all = Collections.list(NetworkInterface.getNetworkInterfaces());
+            for (NetworkInterface nif : all) {
+                if (!nif.getName().equalsIgnoreCase("wlan0")) continue;
+
+                byte[] macBytes = nif.getHardwareAddress();
+                if (macBytes == null) {
+                    return "";
+                }
+
+                StringBuilder res1 = new StringBuilder();
+                for (byte b : macBytes) {
+                    res1.append(String.format("%02X:",b));
+                }
+
+                if (res1.length() > 0) {
+                    res1.deleteCharAt(res1.length() - 1);
+                }
+                return res1.toString();
+            }
+        } catch (Exception ex) {
+        }
+        return "02:00:00:00:00:00";
+    }
+
+    private class MediaServicesTask extends AsyncTask<Void, Void, Void> {
+        String deviceId;
+        protected Void onPreExecute(Void... Void){
+            deviceId = getMacAddr();
+            Log.v("MAC ADDRESS",deviceId);
+         return null;
+        }
+        protected Void doInBackground(Void... params) {
+            try {
+                URL url = new URL("http://"+serverName);
+                HttpURLConnection client = (HttpURLConnection) url.openConnection();
+                client.setRequestMethod("GET"); //use post when going secure
+                client.setRequestProperty("deviceId",deviceId);
+                client.setDoOutput(true);
+
+                InputStream in = new BufferedInputStream(client.getInputStream());
+                readStream(in); //need my own method here.
+
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            }
+            catch (IOException error) {
+                error.printStackTrace();
+            }
+            return null;
+        }
+
+        protected void onProgressUpdate(Void... progress){
+        }
+
+        protected void onPostExecute(Void result) {
+
+        }
+    }
+
 }

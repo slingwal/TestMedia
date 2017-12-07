@@ -4,6 +4,7 @@ import android.app.DownloadManager;
 import android.content.Context;
 import android.net.Uri;
 import android.os.Environment;
+import android.util.Log;
 
 import java.io.File;
 import java.util.Date;
@@ -41,20 +42,31 @@ public class MediaItem {
     public final static int MEDIA_TRANSITION_TYPE_NONE = 0;
     public final static int MEDIA_TRANSITION_TYPE_FADE = 1;
 
-    public MediaItem(Context context, String url, int Type){
+    public MediaItem(Context context, String url, int Type, Date modDate ){
         this.type=Type;
         this.url = url;
+        this.modDate = modDate;
         if(url.length()>0) {
             this.fileName = url.substring(url.lastIndexOf('/') + 1, url.length());
             String a = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) + "/" + fileName;
 
             File file = new File(a);
+            Date lastModified = new Date(file.lastModified());
+            Log.v("FILE CHECK",file.toString()+" modified:"+lastModified.toString()+" modDate:"+modDate.toString());
+
             if (!file.exists()) {
                 Uri uri = Uri.parse(url);
                 downloadId = DownloadData(context, uri, fileName);
-            } else {
-
-                //This will eventually need to check the mod date on the file and compare with the data sent from the server.
+                //Date lastModified2 = new Date(file.lastModified());
+                Log.v("FILE NO EXIST",file.toString()+" modified:"+lastModified.toString());
+            } else {//check if modDate from the server is newer
+                //Date lastModified2 = new Date(file.lastModified());
+                Log.v("FILE CHECK",file.toString()+" modified:"+lastModified.toString());
+                if (this.getModDate().after(lastModified)){
+                    Uri uri = Uri.parse(url);
+                    downloadId = DownloadData(context, uri, fileName);
+                    Log.v("FILE CHECK","Downloading and OverWriting");
+                }
             }
         }
         this.duration= 3*1000; //10 seconds

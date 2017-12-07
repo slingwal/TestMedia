@@ -23,22 +23,34 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.VideoView;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.BufferedInputStream;
+import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.NetworkInterface;
 import java.net.URL;
+import java.net.URLEncoder;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
+import java.util.Date;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
-    static final String serverName = "192.168.7.158";
+    static final String serverName = "192.168.0.16";
     final String zip = "84118";
     final String clientId = "test";
 
@@ -57,7 +69,7 @@ public class MainActivity extends AppCompatActivity {
         //these variables will eventually need to be configured preferences.
 
         String deviceId = getMacAddr();
-        Log.v("MAC ADDRESS",deviceId);
+        Log.d("MAC ADDRESS",deviceId);
 
 
 
@@ -68,12 +80,16 @@ public class MainActivity extends AppCompatActivity {
         final VideoView vidView = (VideoView) findViewById(R.id.videoView);
 
         final Context context = this;
-        mediaList.add(new MediaItem(this, "http://wallscollection.net/wp-content/uploads/2016/12/Wide-Anchor-Wallpapers.jpg",MediaItem.MEDIA_TYPE_IMAGE));
+        Calendar cal = Calendar.getInstance();
+        cal.add(Calendar.YEAR,-10);
+        Date old = cal.getTime();
+        Date today = new Date();
+        mediaList.add(new MediaItem(this, "http://wallscollection.net/wp-content/uploads/2016/12/Wide-Anchor-Wallpapers.jpg",MediaItem.MEDIA_TYPE_IMAGE,old));
         //mediaList.add(new MediaItem(this, "https://i.ytimg.com/vi/9uKJNjUYF7I/maxresdefault.jpg",MediaItem.MEDIA_TYPE_IMAGE)); //black
-        mediaList.add(new MediaItem(this, "http://www.movieforkids.it/wp-content/gallery/piovono-polpette-2/piovono-polpette-57.jpg",MediaItem.MEDIA_TYPE_IMAGE));
-        mediaList.add(new MediaItem(this, "http://video.webmfiles.org/video-h264.mkv",MediaItem.MEDIA_TYPE_VIDEO));
-        mediaList.add(new MediaItem(this, "https://www.androidtutorialpoint.com/wp-content/uploads/2016/09/Beauty.jpg",MediaItem.MEDIA_TYPE_IMAGE));
-        MediaItem item = new MediaItem(this,"",MediaItem.MEDIA_TYPE_NEWS);
+        mediaList.add(new MediaItem(this, "http://www.movieforkids.it/wp-content/gallery/piovono-polpette-2/piovono-polpette-57.jpg",MediaItem.MEDIA_TYPE_IMAGE,today));
+        //mediaList.add(new MediaItem(this, "http://video.webmfiles.org/video-h264.mkv",MediaItem.MEDIA_TYPE_VIDEO));
+        //mediaList.add(new MediaItem(this, "https://www.androidtutorialpoint.com/wp-content/uploads/2016/09/Beauty.jpg",MediaItem.MEDIA_TYPE_IMAGE));
+        MediaItem item = new MediaItem(this,"",MediaItem.MEDIA_TYPE_NEWS,old);
         item.setTitle("News title");
         item.setDetails("Spiffy News Details go here about Donald Trump.");
         mediaList.add(item);
@@ -81,7 +97,7 @@ public class MainActivity extends AppCompatActivity {
 
         final int arraySize = mediaList.size();
 
-
+        new MediaServicesTask(this).execute(deviceId);
 
         new Runnable(){
             int currentIndex = 0;
@@ -226,29 +242,93 @@ public class MainActivity extends AppCompatActivity {
         return "02:00:00:00:00:00";
     }
 
-    private class MediaServicesTask extends AsyncTask<Void, Void, Void> {
-        String deviceId;
+    private class MediaServicesTask extends AsyncTask<String, Void, Void> {
+       // String deviceId;
+       private Context mContext;
+
+        public MediaServicesTask (Context context){
+            mContext = context;
+        }
         protected Void onPreExecute(Void... Void){
-            deviceId = getMacAddr();
-            Log.v("MAC ADDRESS",deviceId);
+            //deviceId = getMacAddr();
+            //Log.v("MAC ADDRESS",deviceId);x
          return null;
         }
-        protected Void doInBackground(Void... params) {
+        protected Void doInBackground(String... params) {
             try {
-                URL url = new URL("http://"+serverName);
+                String deviceId = params[0];
+                Log.v("deviceIdDoInBKG",deviceId);
+                Log.v("clientIdDoInBKG",clientId);
+                URL url = new URL("http://"+serverName+"/web/getMedia.php");
+
+                JSONObject postDataParams = new JSONObject();
+                try {
+                    postDataParams.put("deviceId", deviceId);
+                    postDataParams.put("clientId", clientId);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                Log.e("params",postDataParams.toString());
+
                 HttpURLConnection client = (HttpURLConnection) url.openConnection();
-                client.setRequestMethod("GET"); //use post when going secure
-                client.setRequestProperty("deviceId",deviceId);
+                client.setRequestMethod("POST"); //use post when going secure
+                //client.setRequestProperty("deviceId",deviceId);
+                //client.setRequestProperty("clientId",clientId);
                 client.setDoOutput(true);
+                Log.v("BEFORE STREAM",client.toString());
+                OutputStream os = client.getOutputStream();
+                BufferedWriter writer = new BufferedWriter(
+                        new OutputStreamWriter(os, "UTF-8"));
+                writer.write(getPostDataString(postDataParams));
+
+                writer.flush();
+                writer.close();
+                os.close();
+                Log.v("output stream os",os.toString());
 
                 InputStream in = new BufferedInputStream(client.getInputStream());
-                readStream(in);
+                String webS = readStream(in);
+                Log.d("JSON STREAM",webS);
+                //Log.v("AFTER STREAM",webS);
+                if (webS != null) {
+                    JSONArray mainArr = new JSONArray(webS);
+                    Log.v("JSONArr:",mainArr.toString());
+                    Log.v("JSON Length:",String.valueOf(mainArr.length()));
+                    for (int i = 0; i <= mainArr.length()-1; i++) {
+                        JSONObject media = mainArr.getJSONObject(i);
+                        String mediaId = media.getString("mediaId");
+                        String clientId = media.getString("clientId");
+                        String listName = media.getString("listName");
+                        int mediaType = Integer.parseInt(media.getString("mediaType"));
+                        String mediaUrl = media.getString("url");
+                        String mediaFileName = media.getString("fileName");
+                        int mediaDuration = Integer.parseInt(media.getString("duration"));
+                        int mediaTranType = Integer.parseInt(media.getString("transitiontype"));
+                        //TODO: timeToShow needs to be implemented
+                        //TODO: playImmediate needs to be implemented
+                        int tempbool = Integer.parseInt(media.getString("isInRotation"));
+                        Boolean mediaInRot = false;
+                        if(tempbool>0){
+                            mediaInRot = true;
+                        }
+                        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                        Date mediaModDate = format.parse(media.getString("modDate"));
+                        String mediaTitle = media.getString("title");
+                        String mediaDescrip = media.getString("description");
+                        int mediaOrder = Integer.parseInt(media.getString("orderNum"));
+                        Log.v("JSON PARSE",mediaId+" - "+mediaUrl+" "+mediaModDate.toString()+" - "+mediaInRot.toString());
+                        MediaItem item = new MediaItem(mContext,mediaUrl,mediaType,mediaModDate);
 
+                    }
+
+                }
             } catch (MalformedURLException e) {
                 e.printStackTrace();
             }
             catch (IOException error) {
                 error.printStackTrace();
+            } catch (Exception e) {
+                e.printStackTrace();
             }
             return null;
         }
@@ -272,6 +352,31 @@ public class MainActivity extends AppCompatActivity {
             } catch (IOException e) {
                 return "";
             }
+        }
+
+        public String getPostDataString(JSONObject params) throws Exception {
+
+            StringBuilder result = new StringBuilder();
+            boolean first = true;
+
+            Iterator<String> itr = params.keys();
+
+            while(itr.hasNext()){
+
+                String key= itr.next();
+                Object value = params.get(key);
+
+                if (first)
+                    first = false;
+                else
+                    result.append("&");
+
+                result.append(URLEncoder.encode(key, "UTF-8"));
+                result.append("=");
+                result.append(URLEncoder.encode(value.toString(), "UTF-8"));
+
+            }
+            return result.toString();
         }
     }
 

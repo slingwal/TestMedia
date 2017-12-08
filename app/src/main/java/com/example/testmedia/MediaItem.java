@@ -30,6 +30,7 @@ public class MediaItem {
     private long downloadId;
     private String title;
     private String details;
+    private String id;
 
     //only media types so far.  We can later define a weather, sports or news feed type that would behave as a different media item.
     public final static int MEDIA_TYPE_IMAGE = 0;
@@ -171,6 +172,16 @@ public class MediaItem {
     public void setDetails(String details) {
         this.details = details;
     }
+
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
 
     private long DownloadData (Context context, Uri uri, String name) {
 

@@ -94,20 +94,26 @@ public class MainActivity extends AppCompatActivity {
         item.setDetails("Spiffy News Details go here about Donald Trump.");
         mediaList.add(item);
 
+         //working with new MediaList Class
+        MediaList playList = new MediaList();
+        playList.setMediaList(mediaList);
+        //final int arraySize = mediaList.size();
 
-        final int arraySize = mediaList.size();
-
-        new MediaServicesTask(this).execute(deviceId);
-
+        new MediaServicesTask(this).execute(playList);
+        Log.v("playList Size",String.valueOf(playList.mediaList.size()));
+        mediaList.addAll(playList.getMediaList());
+        Log.v("mediaList Size",String.valueOf(mediaList.size()));
         new Runnable(){
             int currentIndex = 0;
 
             @Override
             public void run() {
+                int arraySize=mediaList.size();
                 if(currentIndex == arraySize){
                     currentIndex=0;
                 }
                 MediaItem img = mediaList.get(currentIndex);
+
 
                 tvTitle.setAlpha(0f);
                 tvDetail.setAlpha(0f);
@@ -242,7 +248,7 @@ public class MainActivity extends AppCompatActivity {
         return "02:00:00:00:00:00";
     }
 
-    private class MediaServicesTask extends AsyncTask<String, Void, Void> {
+    private class MediaServicesTask extends AsyncTask<MediaList, Void, Void> {
        // String deviceId;
        private Context mContext;
 
@@ -254,9 +260,9 @@ public class MainActivity extends AppCompatActivity {
             //Log.v("MAC ADDRESS",deviceId);x
          return null;
         }
-        protected Void doInBackground(String... params) {
+        protected Void doInBackground(MediaList... playList) {
             try {
-                String deviceId = params[0];
+                String deviceId = playList[0].getDeviceId();
                 Log.v("deviceIdDoInBKG",deviceId);
                 Log.v("clientIdDoInBKG",clientId);
                 URL url = new URL("http://"+serverName+"/web/getMedia.php");
@@ -318,7 +324,14 @@ public class MainActivity extends AppCompatActivity {
                         int mediaOrder = Integer.parseInt(media.getString("orderNum"));
                         Log.v("JSON PARSE",mediaId+" - "+mediaUrl+" "+mediaModDate.toString()+" - "+mediaInRot.toString());
                         MediaItem item = new MediaItem(mContext,mediaUrl,mediaType,mediaModDate);
-
+                        item.setDuration(mediaDuration);
+                        item.setFileName(mediaFileName);
+                        item.setDetails(mediaDescrip);
+                        item.setOrder(mediaOrder);
+                        item.setInRotation(mediaInRot);
+                        item.setTransitionType(mediaTranType);
+                        item.setId(mediaId);
+                        playList[0].addMediaItem(item);
                     }
 
                 }
